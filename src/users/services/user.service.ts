@@ -22,28 +22,23 @@ export class UsersService {
   }
 
   findUsername(username: string) : Promise<User> {
-    return this.usersRepository.findOneBy({username});
+    return this.usersRepository.findOneBy({ username });
   }
 
   findEmail(email: string): Promise<User> {
     return this.usersRepository.findOneBy({ email });
   }
 
-  async createUser(@Body() createUserDto: createUserDto): Promise<User> {
-    const user = this.usersRepository.create(createUserDto);
-    if(!(user.role == "Admin" || user.role == "ProjectManager" || user.role == "Employee")) {
-      user.role = "Employee";
-    }
-    user.password = await bcrypt.hash(user.password, 10)
-    await this.usersRepository.save(user)
-    return user
-  }
-
-  async remove(id: string): Promise<void> {
-    await this.usersRepository.delete(id);
+  async createUser(user: createUserDto) {
+    const newUser = this.usersRepository.create({
+      ...user, 
+      password:  await bcrypt.hash(user.password, await bcrypt.genSalt(10)),
+    });
+    return this.usersRepository.save(newUser);
   }
 
   async validate({ email, password }: loginUserDto): Promise<createUserDto> {
+    console.log(email, password)
     const user = await this.usersRepository.findOne({ where: { email }});
     const areEqual = await bcrypt.compare(password, user.password);
     if(!user) {

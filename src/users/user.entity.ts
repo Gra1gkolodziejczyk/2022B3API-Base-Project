@@ -7,18 +7,18 @@ import {
 @Entity()
 export class User {
   @PrimaryGeneratedColumn("uuid")
-  id: number;
+  id!: number;
 
-  @Column({nullable: false, unique: true})
-  username: string;
+  @Column({unique: true})
+  username!: string;
 
-  @Column({nullable: false, unique: true})
-  email: string;
+  @Column({unique: true})
+  email!: string;
   
   @Column({nullable: false})
-  password: string;
+  password!: string;
 
-  @Column({ default: "Employee" })
-  role: string;
+  @Column({ default: 'Employee' })
+  role?: 'Employee' | 'Admin' | 'ProjectManager'
 }
 

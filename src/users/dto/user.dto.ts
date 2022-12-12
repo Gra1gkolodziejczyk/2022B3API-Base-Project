@@ -3,14 +3,14 @@ import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-vali
 export default class createUserDto {
   @IsNotEmpty()
   @MinLength(3)
-  readonly username: string;
+  readonly username!: string;
   @IsNotEmpty()
   @IsEmail()
-  readonly email: string;
+  readonly email!: string;
   @IsNotEmpty()
   @MinLength(8)
-  readonly password: string;
+  readonly password!: string;
   @IsOptional()
   @IsString()
-  readonly role: string;
+  readonly role?: 'Employee' | 'Admin' | 'ProjectManager';
 }

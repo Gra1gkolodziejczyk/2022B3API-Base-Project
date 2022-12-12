@@ -5,40 +5,49 @@ import { Body,
   Post, 
   UsePipes, 
   ValidationPipe,
-  UseGuards
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import loginUserDto from '../dto/login.dto';
 import createUserDto from '../dto/user.dto';
 import { UsersService } from '../services/user.service';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guards';
+import { AuthService } from '../../auth/services/auth.service';
+import { User } from '../user.entity';
+import { LocalAuthGuard } from '../../auth/guards/local-auth.guards';
 
 @Controller('users')
 export class UserController {
   constructor(
-    private readonly UsersService: UsersService,
+    private authService: AuthService,
+    private UsersService: UsersService,
     ) {}
 
   @Get()
-  @UsePipes(ValidationPipe)
-  GetfindAll() {
+  getAllUsers() {
     return this.UsersService.findAll();
   }
 
   @Get(':id')
-  @UsePipes(ValidationPipe)
-  GetFindOne(@Param('id') id: number) {
+  getUserById(@Param('id') id: number) {
     return this.UsersService.findOne(id);
   }
 
-  @Post("auth/sign-up")
-  @UsePipes(ValidationPipe)
-  PostCreateUser(@Body() User: createUserDto) {
-    return this.UsersService.createUser(User);
+  @UseGuards(JwtAuthGuard)
+  @Get('/me')
+  findMe(@Request() req) : Promise<loginUserDto> {
+    return req.user;
   }
 
-  @Post("auth/login")
+  @Post('auth/sign-up')
   @UsePipes(ValidationPipe)
-  login(@Body() User: loginUserDto) {
-    return this.UsersService.validate(User);
+  async create(@Body() createUserDto: createUserDto) {
+    return this.UsersService.createUser(createUserDto);
+  }
+
+  @UseGuards(LocalAuthGuard)
+  @Post("auth/login")
+  async login(@Body() body: loginUserDto, @Request() req) {
+    return this.authService.login(req.user);
   }
 }
