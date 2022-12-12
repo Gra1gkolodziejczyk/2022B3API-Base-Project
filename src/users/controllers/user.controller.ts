@@ -14,7 +14,6 @@ import createUserDto from '../dto/user.dto';
 import { UsersService } from '../services/user.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guards';
 import { AuthService } from '../../auth/services/auth.service';
-import { User } from '../user.entity';
 import { LocalAuthGuard } from '../../auth/guards/local-auth.guards';
 import { ValidatorOptions } from 'class-validator';
 
@@ -25,6 +24,7 @@ export class UserController {
     private UsersService: UsersService,
     ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   getAllUsers() {
     return this.UsersService.getAllUsers();
@@ -36,9 +36,10 @@ export class UserController {
     return req.user;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   getUserById(@Param('id') id: string) {
-    return this.UsersService.findById(id);
+    return this.UsersService.getById(id);
   }
 
   @Post('auth/sign-up')
