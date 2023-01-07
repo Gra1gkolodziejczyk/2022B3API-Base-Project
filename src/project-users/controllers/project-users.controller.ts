@@ -8,8 +8,14 @@ import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guards";
       ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get()
+  @Get('/projects-users')
   getAllProjectUsers() {
     return this.ProjectUserService.getAllProjectUsers();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/projects-users/:id')
+  getProjectById() {
+    return this.ProjectUserService.getProjectById();
   }
 }

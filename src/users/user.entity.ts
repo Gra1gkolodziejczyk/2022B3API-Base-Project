@@ -19,6 +19,6 @@ export class User {
   password!: string;
 
   @Column({ default: 'Employee' })
-  role?: 'Employee' | 'Admin' | 'ProjectManager'
+  role!: 'Employee' | 'Admin' | 'ProjectManager';
 }
 
