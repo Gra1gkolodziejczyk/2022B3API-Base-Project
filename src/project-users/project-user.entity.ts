@@ -10,7 +10,7 @@ export class ProjectUser {
   id!: string;
 
   @Column()
-  startData!: Date;
+  startDate!: Date;
 
   @Column()
   endDate!: Date;

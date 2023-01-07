@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Injectable, NotFoundException, Post, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import createUserDto from '../dto/user.dto';
@@ -6,7 +6,6 @@ import loginUserDto from '../dto/login.dto';
 import { User } from '../user.entity';
 import * as  bcrypt from "bcrypt";
 import { isUUID } from 'class-validator';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class UsersService {
@@ -23,7 +22,7 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
-  async getById(id: string): Promise<User | undefined> {
+  async getById(id: string): Promise<User> {
     if(!isUUID(id)) throw new BadRequestException('invalid id')
     const user = await this.usersRepository.findOneBy({ id });
     if(!user) {
