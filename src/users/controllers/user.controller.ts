@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guards';
 import { AuthService } from '../../auth/services/auth.service';
 import { LocalAuthGuard } from '../../auth/guards/local-auth.guards';
 import { ValidatorOptions } from 'class-validator';
+import { User } from '../user.entity';
 
 @Controller('users')
 export class UserController {
@@ -25,7 +26,17 @@ export class UserController {
     ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get()
+  @Get("online")
+  async getInfos(@Body() body: loginUserDto, @Request() request): Promise<User> {
+    try {
+      return await this.UsersService.getInfos(request.user);
+    } catch(e) {
+    console.log(request)
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/')
   getAllUsers() {
     return this.UsersService.getAllUsers();
   }

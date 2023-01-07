@@ -40,12 +40,17 @@ export class UsersService {
   }
 
   async validate({ email, password }: loginUserDto): Promise<createUserDto> {
-    console.log(email, password)
     const user = await this.usersRepository.findOne({ where: { email }});
     const arePasswordEqual = await bcrypt.compare(password, user.password);
     if(!user) {
       throw new UnauthorizedException();
     }
+    return user;
+  }
+
+  async getInfos(token: any): Promise<User> {
+    const user = await this.findOneBy(token.email);
+    user.password = undefined;
     return user;
   }
 }
