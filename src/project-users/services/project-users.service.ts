@@ -1,31 +1,50 @@
-// import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import internal from 'stream';
-// import { Repository } from 'typeorm';
-// import { Project } from '../../projects/project.entity';
-// import createProjectUserDto from '../dto/project-users.dto';
-// import { ProjectUser } from '../project-user.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { ProjectUserDto } from "../dto/project-users.dto";
+import { ProjectUser } from "../project-user.entity";
+import * as dayjs from "dayjs";
+import * as isBetween from "dayjs/plugin/isBetween";
 
-// @Injectable()
-// export class ProjectUserService {
-//   projectsRepository: ProjectUserService;
-//   constructor(
-//     @InjectRepository(ProjectUserService)
-//     private projectsRepository: Repository<ProjectUserService>,
-//   ) {}
+dayjs.extend(isBetween);
 
-//   getAllProjectUsers(): Promise<ProjectUserService[]> {
-//     return this.projectsRepository.find();
-//   }
+@Injectable()
+export class ProjectUserServices {
+  constructor(
+		@InjectRepository(ProjectUser)
+		private readonly projectUserRepository: Repository<ProjectUser>
+	) {}
 
-//   findOneBy(ProjectId: string): Promise<ProjectUserService> {
-//     return this.projectsRepository.findOneBy({ ProjectId });
-//   }
+  async createProjectUser(projectUserDto : ProjectUserDto) {
+    const projectUser = new ProjectUser();
+    projectUser.startDate = projectUserDto.startDate;
+    projectUser.endDate = projectUserDto.endDate;
+    projectUser.userId = projectUserDto.userId;
+    projectUser.projectId = projectUserDto.projectId;
+    return await this.projectUserRepository.save(projectUser);
+  }
 
-//   async createProject(project: createProjectUserDto) {
-//     const newProject = this.projectsRepository.createProject({
-//       ...project, 
-//     });
-//     return this.projectsRepository.save(newProject);
-//   }
-// }
+  async getProjectUserByProjUserId(projectId : string, userId : string) : Promise<ProjectUser> {
+    return await this.projectUserRepository.findOneBy({ projectId, userId });
+  }
+
+  async getAllProjectUser() : Promise<ProjectUser[]> {
+    return await this.projectUserRepository.find();
+  }
+
+  async getAllProjectUserByUserID(userId : string) : Promise<ProjectUser[]> {
+    return await this.projectUserRepository.findBy({ userId });
+  }
+
+  async getProjectUserForUserInDate(userId: string, date : Date) : Promise<ProjectUser[]> {
+    const allProjectUser = await this.getAllProjectUserByUserID(userId);
+    return allProjectUser.filter(
+        puser => dayjs(date).isBetween(dayjs(puser.startDate), puser.endDate, "d", "[]")
+    );
+  }
+
+  async getProjectUser(id : string) : Promise<ProjectUser> {
+    return await this.projectUserRepository.findOneBy({ id });
+  }
+
+}

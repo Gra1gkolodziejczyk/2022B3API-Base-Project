@@ -1,21 +1,77 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Body, ConflictException, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post, Request, UseGuards } from "@nestjs/common";
+import { Roles } from "../../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guards";
+import { RolesGuard } from "../../auth/guards/role.guard";
+import { ProjectsServices } from "../../projects/services/projects.service";
+import { UsersServices } from "../../users/services/user.service";
+import { Role } from "../../users/user.entity";
+import { ProjectUserDto } from "../dto/project-users.dto";
+import { ProjectUserServices } from "../services/project-users.service";
+import * as dayjs from "dayjs";
+import * as isBetween from "dayjs/plugin/isBetween";
 
-@Controller('/project-users')
-  export class ProjectUserController {
-  ProjectUserService: any;
-    constructor(
-      ) {}
+dayjs.extend(isBetween);
 
-  @UseGuards(JwtAuthGuard)
-  @Get('/projects-users')
-  getAllProjectUsers() {
-    return this.ProjectUserService.getAllProjectUsers();
+@Controller('project-users')
+@UseGuards(JwtAuthGuard)
+export class ProjectUserController {
+
+  constructor(
+    private projectsServices : ProjectsServices,
+    private usersServices : UsersServices,
+    private projectUserServices : ProjectUserServices
+  ){}
+  
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN, Role.PROJECTMANAGER)
+  async postProjectUser(@Body() projectUserDto : ProjectUserDto) {
+    const project = await this.projectsServices.getProjectById(projectUserDto.projectId);
+    if (!project) {
+      throw new NotFoundException();
+    }
+    const user = await this.usersServices.getUserById(projectUserDto.userId);
+    if (!user) {
+      throw new NotFoundException();
+    }
+    const allProjectUser = await this.projectUserServices.getAllProjectUserByUserID(projectUserDto.userId);
+    for (const projectUser of allProjectUser) {
+      if (dayjs(projectUserDto.startDate).isBetween(
+          projectUser.startDate, projectUser.endDate, 'day', '[)'
+        ) || dayjs(projectUserDto.endDate).isBetween(
+          projectUser.startDate, projectUser.endDate, 'day', '(]'
+        ) || dayjs(projectUser.startDate).isBetween(
+          projectUserDto.startDate, projectUserDto.endDate, 'day', '[)'
+        ) || dayjs(projectUser.endDate).isBetween(
+          projectUserDto.startDate, projectUserDto.endDate, 'day', '(]'
+        )) throw new ConflictException();
+    }
+    return await this.projectUserServices.createProjectUser(projectUserDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('/projects-users/:id')
-  getProjectById() {
-    return this.ProjectUserService.getProjectById();
+  @Get(':id')
+  async getProjectUserId(@Request() req, @Param('id', new ParseUUIDPipe()) id : string) {
+    const user = await this.usersServices.getUserById(req.user.userId);
+    const projectUser = await this.projectUserServices.getProjectUser(id);
+    if (user.role == Role.ADMIN || user.role == Role.PROJECTMANAGER) {
+      return projectUser;
+    } else {
+      if (projectUser.userId == user.id) {
+        return projectUser;
+      } else {
+        throw new NotFoundException()
+      }
+    }
+  }
+
+  @Get()
+  async getProjectUser(@Request() req) {
+    const role = (await this.usersServices.getUserById(req.user.userId)).role;
+    if (role == Role.EMPLOYEE) {
+      const all = await this.projectUserServices.getAllProjectUserByUserID(req.user.userId);
+      return all;
+    } else {
+      return await this.projectUserServices.getAllProjectUser();
+    }
   }
 }

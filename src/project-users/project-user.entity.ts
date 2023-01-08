@@ -1,24 +1,31 @@
-import { 
-  Entity, 
-  Column, 
-  PrimaryGeneratedColumn 
-} from 'typeorm';
+import { IsNotEmpty } from "class-validator";
+import { Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Project } from "../projects/project.entity";
+import { User } from "../users/user.entity";
 
 @Entity()
 export class ProjectUser {
+
   @PrimaryGeneratedColumn("uuid")
-  id!: string;
+  @PrimaryColumn("uuid")
+  @IsNotEmpty()
+  public id!: string;
 
   @Column()
-  startDate!: Date;
-
-  @Column()
-  endDate!: Date;
+  public startDate!: Date;
   
-  @PrimaryGeneratedColumn("uuid")
-  ProjectId!: string;
+  @Column()
+  public endDate!: Date;
 
-  @PrimaryGeneratedColumn("uuid")
-  userId!: string;
+  @Column("uuid")
+  public projectId!: string;
+
+  @Column("uuid")
+  public userId!: string;
+
+  @ManyToOne(() => User, (user: User) => user.projectUser)
+  public user: User
+
+  @ManyToOne(() => Project, (project: Project) => project.projectUser)
+  public project: Project
 }
-

@@ -1,10 +1,15 @@
-import { IsDate, IsNotEmpty } from "class-validator";
+import { IsDate, IsUUID } from "class-validator";
 
-export default class createProjectUserDto {
-  @IsNotEmpty()
+export class ProjectUserDto {
   @IsDate()
-  readonly startDate!: Date;
-  @IsNotEmpty()
+  startDate!: Date;
+
   @IsDate()
-  readonly endDate!: Date;
+  endDate!: Date;
+
+  @IsUUID()
+  userId!: string;
+
+  @IsUUID()
+  projectId!: string;
 }

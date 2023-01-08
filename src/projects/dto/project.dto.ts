@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsUUID, MinLength } from "class-validator";
 
-export default class CreateProjectDto {
+export class CreateProjectDto {
+  @MinLength(3)
   @IsNotEmpty()
-  @IsString()
   name!: string;
 
+  @IsUUID()
   @IsNotEmpty()
-  @IsString()
   referringEmployeeId!: string;
 }

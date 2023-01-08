@@ -1,73 +1,67 @@
-import { Body, 
-  Controller, 
-  Get, 
-  Param, 
-  Post, 
-  UsePipes, 
-  ValidationPipe,
-  UseGuards,
-  Request,
-  ValidationError,
-} from '@nestjs/common';
-import loginUserDto from '../dto/login.dto';
-import createUserDto from '../dto/user.dto';
-import { UsersService } from '../services/user.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guards';
-import { AuthService } from '../../auth/services/auth.service';
-import { LocalAuthGuard } from '../../auth/guards/local-auth.guards';
-import { ValidatorOptions } from 'class-validator';
-import { User } from '../user.entity';
+import { Controller, Get, Param, Post, UseGuards, Request, UsePipes, ValidationPipe, Body, ParseUUIDPipe, NotFoundException, ParseIntPipe, BadRequestException } from "@nestjs/common";
+import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guards";
+import { LocalAuthGuard } from "../../auth/guards/local-auth.guards";
+import { AuthService } from "../../auth/services/auth.service";
+import { CreateUserDto } from "../dto/user.dto";
+import { LoginUserDto } from "../dto/login.dto";
+import { UsersServices } from "../services/user.service";
+import * as dayjs from "dayjs";
+import * as isBetween from "dayjs/plugin/isBetween";
+
+dayjs.extend(isBetween);
 
 @Controller('users')
-export class UserController {
-  constructor(
-    private authService: AuthService,
-    private UsersService: UsersService,
-    ) {}
+export class UsersController {
+	constructor(
+		private userServices: UsersServices,
+		private authService: AuthService
+	) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Get("online")
-  async getInfos(@Body() body: loginUserDto, @Request() request): Promise<User> {
-    try {
-      return await this.UsersService.getInfos(request.user);
-    } catch(e) {
-    console.log(request)
-    }
-  }
+	@UsePipes(ValidationPipe)
+	@Post('auth/sign-up')
+	async createUser(@Body() createUserDto: CreateUserDto): Promise<CreateUserDto> {
+		return await this.userServices.createUser(createUserDto);
+	}
+	
+	@UseGuards(LocalAuthGuard)
+	@Post('auth/login')
+	async login(@Body() loginUserDto: LoginUserDto) {
+		if (this.authService.validateUser(loginUserDto.email, loginUserDto.password)) {
+			return this.authService.login(await this.userServices.findUserByEmail(loginUserDto.email));
+		}
+	}
 
-  @UseGuards(JwtAuthGuard)
-  @Get('/')
-  getAllUsers() {
-    return this.UsersService.getAllUsers();
-  }
+	@Get('me')
+	@UseGuards(JwtAuthGuard)
+	getSelfData(@Request() req) {
+		return req.user;
+	}
 
-  @UseGuards(JwtAuthGuard)
-  @Get('/me')
-  findMe(@Request() req) {
-    return req.user;
-  }
+	@Get(':id')
+	async getUserById(@Param('id', new ParseUUIDPipe()) id: string) {
+		let user = await this.userServices.getUserById(id);
+		if (user) {
+			return user
+		} else {
+			throw new NotFoundException();
+		}
+	}
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  getUserById(@Param('id') id: string) {
-    return this.UsersService.getById(id);
-  }
+	projectDay(month: number) : number {
+		let dayMonth = dayjs().month(month);
+		const daysInMonth = dayMonth.daysInMonth();
+		let count = 0;
+		for (let i = 1; i <= daysInMonth; i++) {
+			const day = dayjs().date(i).month(month).day();
+			if (day != 0 && day != 6)
+				count++;
+		}
+		return count;
+	}
 
-  @Post('auth/sign-up')
-  @UsePipes(ValidationPipe)
-  async createUser(@Body() createUserDto: createUserDto) {
-    return this.UsersService.createUser(createUserDto);
-  }
-
-  @UseGuards(LocalAuthGuard)
-  @Post("auth/login")
-  async login(@Body() body: loginUserDto, @Request() req) {
-    return this.authService.login(req.user);
-  }
-}
-
-export interface ValidationPipeOptions extends ValidatorOptions {
-  transform?: boolean;
-  disableErrorMessages?: boolean;
-  exceptionFactory?: (errors: ValidationError[]) => any;
+	@Get()
+	@UseGuards(JwtAuthGuard)
+	getAllUsers() {
+		return this.userServices.getAllUsers();
+	}
 }
